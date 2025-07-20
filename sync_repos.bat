@@ -19,15 +19,16 @@ if errorlevel 1 (
     exit /b 1
 )
 
+REM 配置Git以使用noreply邮箱地址
+echo [配置] 设置Git邮箱...
+git config --global user.email "1263247980+zeng03@users.noreply.github.com"
+git config --global user.name "zeng03"
+
 REM 检查是否已初始化Git仓库
 if not exist ".git" (
     echo [初始化] 首次运行, 正在初始化Git仓库...
     git init
     git checkout -b main
-
-    echo [配置] 设置Git用户信息...
-    git config user.name "zeng03"
-    git config user.email "1263247980@qq.com"
 
     echo [配置] 添加远程仓库...
     git remote add origin https://github.com/ZENG-03/vip-video-parser.git
@@ -39,7 +40,8 @@ if not exist ".git" (
     echo [推送] 正在推送到GitHub...
     git push -u origin main
     if errorlevel 1 (
-        echo [错误] 推送失败, 请检查仓库地址和权限。
+        echo [错误] 推送失败, 请检查网络连接和仓库权限。
+        echo 请确保已在浏览器中登录了GitHub账号。
         pause
         exit /b 1
     )
@@ -58,10 +60,7 @@ if not exist ".git" (
         git checkout main 2>nul || git checkout -b main
     )
 
-    echo [更新] 正在获取远程更新...
-    git fetch origin main
-
-    echo [更新] 正在同步最新改动...
+    echo [���新] 正在同步最新改动...
     git add .
 
     REM 检查是否有改动需要提交
@@ -74,7 +73,7 @@ if not exist ".git" (
 
     set /p commit_msg="请输入本次提交的说明 (直接回车将使用默认说明): "
     if "!commit_msg!"=="" (
-        set "commit_msg=��新代码"
+        set "commit_msg=更新代码"
     )
 
     echo.
@@ -88,12 +87,26 @@ if not exist ".git" (
 
     echo.
     echo [推送] 正在推送到GitHub...
+
+    REM 设置更长的超时时间
+    set GIT_HTTP_LOW_SPEED_LIMIT=1000
+    set GIT_HTTP_LOW_SPEED_TIME=60
+
     git push origin main
     if errorlevel 1 (
         echo [错误] 推送失败, 请检查网络连接。
+        echo 1. 确保您的网络连接正常
+        echo 2. 如果使用代理，请检查代理设置
+        echo 3. 确保已在浏览器中登录了GitHub账号
+
         choice /C YN /M "是否尝试强制推送"
         if errorlevel 1 (
             git push -f origin main
+            if errorlevel 1 (
+                echo [错误] 强制推送也失败了，请检查网络连接和权限设置。
+                pause
+                exit /b 1
+            )
         ) else (
             goto end
         )
