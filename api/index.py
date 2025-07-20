@@ -57,7 +57,7 @@ def check_server_availability(server_url, video_url):
 def index():
     return render_template('index.html')
 
-@app.route('/parse', methods=['POST'])
+@app.route('/api/parse', methods=['POST'])
 def parse_video():
     try:
         data = request.get_json()
