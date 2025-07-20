@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIP视频解析</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .container {
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        .input-box {
+            margin: 15px 0;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            color: white;
+            background: #2196F3;
+            border: none;
+            border-radius: 8px;
+            margin-top: 10px;
+            -webkit-appearance: none;
+        }
+        button:disabled {
+            background: #ccc;
+        }
+        #status {
+            padding: 10px;
+            text-align: center;
+            color: #666;
+        }
+
+        /* 播放器容器样式 */
+        .player-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 1000;
+            display: none;
+        }
+
+        /* 视频播放区域样式 */
+        .player-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            /* 减去控制栏高度 */
+            height: calc(100% - 35px);
+        }
+
+        /* 视频iframe样式 */
+        .player-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* 控制栏样式 */
+        .controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 35px;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        /* 控制按钮样式 */
+        .control-btn {
+            padding: 4px 12px;
+            height: 25px;
+            line-height: 25px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #333;
+            cursor: pointer;
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        /* 下拉菜单容器 */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* 下拉菜单内容 */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            bottom: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            min-width: 120px;
+            max-height: 300px;  /* 设置最大高度 */
+            overflow-y: auto;   /* 启用垂直滚动 */
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 1001;
+        }
+
+        /* 下拉菜单选项 */
+        .dropdown-content button {
+            display: block;
+            width: 100%;
+            padding: 8px 16px;
+            text-align: left;
+            background: none;
+            border: none;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .dropdown-content button:hover {
+            background-color: #f0f0f0;
+        }
+
+        .dropdown-content button.active {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        /* 美化滚动条 */
+        .dropdown-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .dropdown-content::-webkit-scrollbar-track {
+            background: #f5f5f5;
+            border-radius: 3px;
+        }
+
+        .dropdown-content::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        .dropdown-content::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            z-index: 1002;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="input-box">
+            <input type="text" id="videoUrl" placeholder="输入视频链接">
+            <button onclick="parseVideo()" id="parseBtn">解析播放</button>
+        </div>
+        <div id="status"></div>
+    </div>
+
+    <div id="playerContainer" class="player-container">
+        <div id="loading" class="loading">加载中...</div>
+        <div class="player-wrapper" id="playerWrapper"></div>
+        <div class="controls">
+            <button class="control-btn" onclick="reloadPlayer()">重新加载</button>
+            <div class="dropdown">
+                <button class="control-btn" onclick="toggleDropdown(event)">不同接口</button>
+                <div id="serverDropdown" class="dropdown-content"></div>
+            </div>
+            <button class="control-btn" onclick="closePlayer()">关闭播放</button>
+        </div>
+    </div>
+
+    <script>
+        let currentServerIndex = 0;
+        let parseResults = null;
+
+        function toggleDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('serverDropdown');
+            const isVisible = dropdown.style.display === 'block';
+            dropdown.style.display = isVisible ? 'none' : 'block';
+        }
+
+        function updateServerList() {
+            const dropdown = document.getElementById('serverDropdown');
+            dropdown.innerHTML = '';
+
+            if (parseResults && parseResults.length > 0) {
+                // 遍历所有接口并创建按钮
+                parseResults.forEach((url, index) => {
+                    const button = document.createElement('button');
+                    // 根据URL判断接口类型
+                    let interfaceType = '';
+                    if (url.includes('lhh.la')) {
+                        interfaceType = '智能解析接口';
+                    } else if (url.includes('777jiexi.com')) {
+                        interfaceType = '稳定智能接口';
+                    } else if (url.includes('jhdyw.vip')) {
+                        interfaceType = '解析专线接口';
+                    } else if (url.includes('7c7c.vip')) {
+                        interfaceType = '全网解析接口';
+                    } else if (url.includes('iztyy.com')) {
+                        interfaceType = '高清解析接口';
+                    } else if (url.includes('parwix.com')) {
+                        interfaceType = '智能云解析';
+                    } else if (url.includes('playerjy.com')) {
+                        interfaceType = '稳定解析接口';
+                    } else if (url.includes('zz22x.com')) {
+                        interfaceType = '备用智能接口';
+                    }
+
+                    button.textContent = interfaceType;
+
+                    // 如果是当前选中的接口，添加高亮样式
+                    if (currentServerIndex === index) {
+                        button.classList.add('active');
+                    }
+
+                    // 添加点击事件
+                    button.onclick = (e) => {
+                        e.stopPropagation();
+                        const buttons = dropdown.getElementsByTagName('button');
+                        Array.from(buttons).forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+
+                        // 切换到新选择的接口
+                        currentServerIndex = index;
+                        loadVideo();
+                        toggleDropdown(e);
+                    };
+
+                    dropdown.appendChild(button);
+                });
+            }
+        }
+
+        function createPlayer(url) {
+            const iframe = document.createElement('iframe');
+            iframe.className = 'player-frame';
+            iframe.src = url;
+            iframe.allowFullscreen = true;
+
+            // 添加更多全屏相关属性支持
+            iframe.setAttribute('allowfullscreen', 'true');
+            iframe.setAttribute('webkitallowfullscreen', 'true');
+            iframe.setAttribute('mozallowfullscreen', 'true');
+            iframe.setAttribute('x5-video-player-type', 'h5');
+            iframe.setAttribute('x5-video-player-fullscreen', 'true');
+            iframe.setAttribute('x5-video-orientation', 'landscape|portrait');
+
+            // 放宽安全限制，允许更多必要的功能
+            iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms allow-pointer-lock allow-modals allow-orientation-lock allow-downloads');
+
+            // 扩展允许的特性
+            iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen; payment; geolocation";
+
+            // 设置样式确保在平板上正确显示
+            iframe.style.border = 'none';
+            iframe.style.position = 'absolute';
+            iframe.style.top = '0';
+            iframe.style.left = '0';
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+
+            return iframe;
+        }
+
+        async function parseVideo() {
+            const url = document.getElementById('videoUrl').value.trim();
+            if (!url) {
+                updateStatus('请输入视频地址');
+                return;
+            }
+
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                updateStatus('请输入正确的视频网址，需要以 http:// 或 https:// 开头');
+                return;
+            }
+
+            const parseBtn = document.getElementById('parseBtn');
+            parseBtn.disabled = true;
+            updateStatus('正在解析...');
+            showLoading();
+
+            try {
+                const response = await fetch('/parse', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({url})
+                });
+
+                // 检查响应状态
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        throw new Error(errorJson.error || '解析服务器返回错误');
+                    } catch (e) {
+                        throw new Error('解析服务暂时不可用，请稍后重试');
+                    }
+                }
+
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                if (data.parse_urls && data.parse_urls.length > 0) {
+                    parseResults = data.parse_urls;
+                    currentServerIndex = 0;
+                    updateServerList();
+                    loadVideo();
+                } else {
+                    throw new Error('未找到可用的解析接口');
+                }
+            } catch (error) {
+                updateStatus(`解析失败: ${error.message}`);
+                hideLoading();
+            } finally {
+                parseBtn.disabled = false;
+            }
+        }
+
+        function loadVideo() {
+            if (!parseResults || currentServerIndex >= parseResults.length) {
+                updateStatus('没有更多可用的解析接口');
+                return;
+            }
+
+            const playerWrapper = document.getElementById('playerWrapper');
+            const playerContainer = document.getElementById('playerContainer');
+
+            showLoading();
+            playerWrapper.innerHTML = '';
+
+            const iframe = createPlayer(parseResults[currentServerIndex]);
+            playerWrapper.appendChild(iframe);
+            playerContainer.style.display = 'block';
+
+            // 优先使用平板优化接口
+            let interfaceType = '';
+            if (parseResults[currentServerIndex].includes('jiexi.t7g.cn')) {
+                interfaceType = '平板优化接口';
+            } else if (parseResults[currentServerIndex].includes('8090.la') ||
+                      parseResults[currentServerIndex].includes('jhdyw.vip')) {
+                interfaceType = '手机平板通用接口';
+            } else {
+                interfaceType = `接口 ${currentServerIndex + 1}`;
+            }
+
+            updateStatus(`正在使用${interfaceType}`);
+
+            // 增加超时检测
+            setTimeout(() => {
+                if (document.getElementById('loading').style.display === 'block') {
+                    hideLoading();
+                    updateStatus('视频加载较慢，建议尝试其他接口');
+                }
+            }, 8000);
+
+            setTimeout(hideLoading, 1500);
+        }
+
+        function reloadPlayer() {
+            loadVideo();
+        }
+
+        function closePlayer() {
+            const playerContainer = document.getElementById('playerContainer');
+            const playerWrapper = document.getElementById('playerWrapper');
+
+            playerContainer.style.display = 'none';
+            playerWrapper.innerHTML = '';
+            document.getElementById('serverDropdown').style.display = 'none';
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // 点击其他地方关闭下拉菜单
+        document.addEventListener('click', () => {
+            document.getElementById('serverDropdown').style.display = 'none';
+        });
+
+        // 添加键盘事件支持
+        document.getElementById('videoUrl').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') parseVideo();
+        });
+    </script>
+</body>
+</html>
