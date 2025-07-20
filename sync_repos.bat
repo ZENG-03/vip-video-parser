@@ -44,13 +44,17 @@ echo [提交] 正在提交更改...
 git commit -m "%commit_msg%"
 if errorlevel 1 (
     if not "%errorlevel%"=="0" (
-        echo [提示] 可��没有需要提交的更改。将继续尝试推送。
+        echo [提示] 可���没有需要提交的更改。将继续尝试推送。
     )
 )
 
 echo.
 echo [修正] 正在更新提交者信息以符合隐私设置...
 git commit --amend --no-edit --reset-author > nul
+
+echo.
+echo [拉取] 正在从GitHub拉取最新更改...
+git pull origin main --rebase
 
 echo.
 echo [推送] 正在推送到GitHub...
