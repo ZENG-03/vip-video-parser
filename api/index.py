@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
 import urllib.parse
@@ -7,8 +7,7 @@ import logging
 import ssl
 
 # --- Vercel 部署配置 ---
-# 确保 Flask 能找到模板文件夹
-app = Flask(__name__, template_folder='../templates')
+app = Flask(__name__)
 CORS(app)
 
 # --- 日志和线程池配置 ---
@@ -52,10 +51,6 @@ def check_server_availability(server_url, video_url):
     except Exception as e:
         logger.debug(f"Server {server_url} check failed: {str(e)}")
     return None
-
-@app.route('/')
-def index():
-    return render_template('index.html')
 
 @app.route('/api/parse', methods=['POST'])
 def parse_video():
