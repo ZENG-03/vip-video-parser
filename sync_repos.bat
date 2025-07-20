@@ -1,110 +1,110 @@
 @echo off
-chcp 65001>nul
+chcp 65001 > nul
+setlocal enabledelayedexpansion
+
 cls
 echo ===========================================
 echo          欢迎使用代码同步工具
 echo ===========================================
 
-REM 设置Git的完整路径
-set "GIT_PATH=C:\Program Files\Git\cmd\git.exe"
-
-REM --- 请在这里配置你的仓库信息 ---
-set "GITEE_USERNAME=zeng03"
-set "GITHUB_REPO_URL=https://github.com/你的用户名/你的仓库名.git"
-REM ------------------------------------
+REM 切换到脚本所��目录
+cd /d "%~dp0"
 
 REM 检查Git是否可用
-"%GIT_PATH%" --version > nul 2>&1
+git --version > nul 2>&1
 if errorlevel 1 (
-    echo [错误] 无法找到Git，请确保Git已正确安装
-    echo 您可以从 https://git-scm.com/downloads 下载安装Git
+    echo [错误] 无法找到Git, 请确保Git已正确安装。
+    echo 您可以从 https://git-scm.com/downloads 下载安装。
     pause
     exit /b 1
 )
 
-REM 添加安全目录配置
-echo [配置] 添加安全目录...
-"%GIT_PATH%" config --global --add safe.directory "F:/PYTHON  ZUOYE/HAOWAN DAIMA/1Python抓取VIP电影免费看"
-
-REM 检查是否是首次运行
+REM 检查是否已初始化Git仓库
 if not exist ".git" (
-    echo [初始化] 首次运行，正在初始化Git仓库...
-    "%GIT_PATH%" init
+    echo [初始化] 首次运行, 正在初始化Git仓库...
+    git init
+    git checkout -b main
 
-    echo [配置] 设置远程仓库...
-    "%GIT_PATH%" remote add gitee "https://gitee.com/%GITEE_USERNAME%/vip-video-parser.git"
-    "%GIT_PATH%" remote add origin "%GITHUB_REPO_URL%"
+    echo [配置] 设置Git用户信息...
+    git config user.name "zeng03"
+    git config user.email "1263247980@qq.com"
 
-    echo.
-    echo [配置] 配置Git用户信息...
-    set "GIT_NAME=zeng03"
-    set "GIT_EMAIL=1263247980@qq.com"
+    echo [配置] 添加远程仓库...
+    git remote add origin https://github.com/ZENG-03/vip-video-parser.git
 
-    "%GIT_PATH%" config user.name "%GIT_NAME%"
-    "%GIT_PATH%" config user.email "%GIT_EMAIL%"
-
-    REM 创建并切换到master分支
-    "%GIT_PATH%" checkout -b master
-
-    echo.
     echo [初始化] 准备首次提交...
-    "%GIT_PATH%" add .
-    "%GIT_PATH%" commit -m "初始化项目"
+    git add .
+    git commit -m "初始化项目"
 
+    echo [推送] 正在推送到GitHub...
+    git push -u origin main
     if errorlevel 1 (
-        echo [错误] 提交失败，请检查文件状态
+        echo [错误] 推送失败, 请检查仓库地址和权限。
+        pause
+        exit /b 1
+    )
+) else (
+    echo [检查] 确保远程仓库配置正确...
+    git remote -v | findstr "origin" > nul
+    if errorlevel 1 (
+        echo [配置] 添加远程仓库...
+        git remote add origin https://github.com/ZENG-03/vip-video-parser.git
+    )
+
+    echo [检查] 确保在正确的分支上...
+    for /f "tokens=*" %%i in ('git branch --show-current') do set "current_branch=%%i"
+    if not "!current_branch!"=="main" (
+        echo [分支] 切换到main分支...
+        git checkout main 2>nul || git checkout -b main
+    )
+
+    echo [更新] 正在获取远程更新...
+    git fetch origin main
+
+    echo [更新] 正在同步最新改动...
+    git add .
+
+    REM 检查是否有改动需要提交
+    git diff --cached --quiet
+    if not errorlevel 1 (
+        echo [提示] 没有检测到需要提交的更改。
+        choice /C YN /M "是否仍要执行空提交"
+        if errorlevel 2 goto end
+    )
+
+    set /p commit_msg="请输入本次提交的说明 (直接回车将使用默认说明): "
+    if "!commit_msg!"=="" (
+        set "commit_msg=��新代码"
+    )
+
+    echo.
+    echo [提交] 正在提交更改...
+    git commit -m "!commit_msg!"
+    if errorlevel 1 (
+        echo [错误] 提交失败，请检查文件状态。
         pause
         exit /b 1
     )
 
     echo.
-    echo [推送] 正在推送到Gitee...
-    "%GIT_PATH%" push -u gitee master
-
-    echo.
     echo [推送] 正在推送到GitHub...
-    "%GIT_PATH%" push -u origin master:main
-
+    git push origin main
     if errorlevel 1 (
-        echo [错误] 推送到GitHub失败，请检查 GITHUB_REPO_URL 是否正确
-        pause
-    )
-
-    echo.
-    echo [完成] 初始化完成！
-) else (
-    echo.
-    echo [更新] 正在同步最新改动...
-    "%GIT_PATH%" add .
-    set /p commit_msg="请输入本次提交的说明 (直接回车将使用默认说明): "
-    if "%commit_msg%"=="" (
-        set "commit_msg=更新代码"
-    )
-    "%GIT_PATH%" commit -m "%commit_msg%"
-
-    REM 获取当前分支名
-    for /f "tokens=*" %%i in ('"%GIT_PATH%" rev-parse --abbrev-ref HEAD') do set CURRENT_BRANCH=%%i
-
-    REM 推送到 Gitee
-    echo.
-    echo [推送] 正在推送到 Gitee...
-    "%GIT_PATH%" push gitee %CURRENT_BRANCH%
-    if errorlevel 1 (
-        echo [错误] 推送到 Gitee 失败，请检查网络和权限��
-    )
-
-    REM 推送到 GitHub
-    echo.
-    echo [推送] 正在推送到 GitHub...
-    "%GIT_PATH%" push origin %CURRENT_BRANCH%:main
-    if errorlevel 1 (
-        echo [错误] 推送到 GitHub 失败，请检查网络和权限。
+        echo [错误] 推送失败, 请检查网络连接。
+        choice /C YN /M "是否尝试强制推送"
+        if errorlevel 1 (
+            git push -f origin main
+        ) else (
+            goto end
+        )
     )
 
     echo.
     echo [完成] 同步完成！
 )
 
+:end
 echo.
 echo ===========================================
+endlocal
 pause
