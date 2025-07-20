@@ -66,7 +66,7 @@
             left: 0;
             width: 100%;
             /* 减去控制栏高度 */
-            height: calc(100% - 35px);
+            height: calc(100% - 45px);
         }
 
         /* 视频iframe样式 */
@@ -83,25 +83,25 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 35px;
+            height: 45px;
             background: rgba(0, 0, 0, 0.8);
             display: flex;
-            justify-content: center;
+            justify-content: space-around;
             align-items: center;
-            gap: 5px;
+            gap: 10px;
             padding: 0 10px;
             box-sizing: border-box;
         }
 
         /* 控制按钮样式 */
         .control-btn {
-            padding: 4px 12px;
-            height: 25px;
-            line-height: 25px;
+            padding: 8px 15px;
+            height: 30px;
+            line-height: 1;
             background: rgba(255, 255, 255, 0.9);
             border: none;
-            border-radius: 4px;
-            font-size: 12px;
+            border-radius: 5px;
+            font-size: 14px;
             color: #333;
             cursor: pointer;
             margin: 0;
@@ -118,11 +118,11 @@
         .dropdown-content {
             display: none;
             position: absolute;
-            bottom: 35px;
+            bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
             background: white;
-            min-width: 120px;
+            min-width: 150px;
             max-height: 300px;  /* 设置最大高度 */
             overflow-y: auto;   /* 启用垂直滚动 */
             border-radius: 4px;
@@ -198,12 +198,12 @@
         <div id="loading" class="loading">加载中...</div>
         <div class="player-wrapper" id="playerWrapper"></div>
         <div class="controls">
-            <button class="control-btn" onclick="reloadPlayer()">重新加载</button>
+            <button class="control-btn" onclick="reloadPlayer()">刷新</button>
             <div class="dropdown">
-                <button class="control-btn" onclick="toggleDropdown(event)">不同接口</button>
+                <button class="control-btn" onclick="toggleDropdown(event)">切换接口</button>
                 <div id="serverDropdown" class="dropdown-content"></div>
             </div>
-            <button class="control-btn" onclick="closePlayer()">关闭播放</button>
+            <button class="control-btn" onclick="closePlayer()">关闭</button>
         </div>
     </div>
 
