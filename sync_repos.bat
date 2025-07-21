@@ -4,7 +4,7 @@ setlocal
 
 cls
 echo ===========================================
-echo          欢迎使用代码同步工具
+echo          GitHub Pages 部署工具
 echo ===========================================
 
 REM 切换到脚本所在目录
@@ -37,12 +37,48 @@ if errorlevel 1 (
 )
 
 echo.
+echo [清理] 正在删除不需要的文件...
+
+REM 如果存在.gitignore文件，则创建一个
+if not exist .gitignore (
+    echo [创建] 正在创建.gitignore文件...
+    (
+        echo # 忽略Python生成的文件
+        echo __pycache__/
+        echo *.py[cod]
+        echo *$py.class
+        echo *.so
+        echo .Python
+        echo env/
+        echo build/
+        echo develop-eggs/
+        echo dist/
+        echo downloads/
+        echo eggs/
+        echo .eggs/
+        echo lib/
+        echo lib64/
+        echo parts/
+        echo sdist/
+        echo var/
+        echo *.egg-info/
+        echo .installed.cfg
+        echo *.egg
+        echo # 忽略IDE文件
+        echo .idea/
+        echo .vscode/
+        echo # 忽略VLC目录
+        echo vlc-3.0.0/
+    ) > .gitignore
+)
+
+echo.
 echo [更新] 正在添加所有更改...
-git add .
+git add index.html README.md sync_repos.bat .gitignore
 
 echo.
 set /p commit_msg="请输入本次提交的说明 (直接回车将使用默认说明): "
-if "%commit_msg%"=="" set "commit_msg=更新代码"
+if "%commit_msg%"=="" set "commit_msg=更新为纯前端版本，优化GitHub Pages部署"
 
 echo.
 echo [提交] 正在提交更改...
@@ -52,10 +88,6 @@ if errorlevel 1 (
         echo [提示] 可能没有需要提交的更改。将继续尝试推送。
     )
 )
-
-echo.
-echo [修正] 正在更新提交者信息以符合隐私设置...
-git commit --amend --no-edit --reset-author > nul
 
 echo.
 echo [推送] 正在推送到GitHub (可能需要等待较长时间)...
@@ -70,13 +102,17 @@ if errorlevel 1 (
     echo.
     echo 2. 稍后再试，或者使用其他网络环境
     echo.
-    echo 3. 打开浏览器直接访问 Vercel 管理页面，重新部署项目
-    echo    https://vercel.com/dashboard
-    echo.
-    echo [提示] 您的代码已成功保存在本地Git仓库中，不会丢失。
     pause
 ) else (
     echo [完成] 同步成功！
+    echo.
+    echo [GitHub Pages] 请检查GitHub仓库设置，确保已启用GitHub Pages：
+    echo 1. 访问 https://github.com/ZENG-03/vip-video-parser/settings/pages
+    echo 2. 在"Source"部分选择"main"分支
+    echo 3. 点击"Save"保存设置
+    echo.
+    echo 部署成功后，您的网站将可以通过以下地址访问：
+    echo https://zeng-03.github.io/vip-video-parser
 )
 
 echo.

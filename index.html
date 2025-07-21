@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIP视频解析 - 免费看各大视频平台VIP资源</title>
+    <meta name="description" content="免费VIP视频解析工具，支持爱奇艺、腾讯视频、优酷、芒果TV等各大平台VIP视频免费观看">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .main {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .url-input {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        #videoUrl {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+            outline: none;
+            transition: border 0.3s;
+        }
+        #videoUrl:focus {
+            border-color: #2575fc;
+        }
+        #parseBtn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        #parseBtn:hover {
+            opacity: 0.9;
+        }
+        #parseBtn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.loading {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+            display: block;
+        }
+        .status.success {
+            background-color: #e8f5e9;
+            color: #1b5e20;
+            display: block;
+        }
+        .status.error {
+            background-color: #ffebee;
+            color: #b71c1c;
+            display: block;
+        }
+        .result-container {
+            display: none;
+            margin-top: 20px;
+        }
+        .result-title {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .parse-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .parse-link {
+            display: block;
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #2575fc;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .parse-link:hover {
+            background: #e3f2fd;
+            transform: translateY(-2px);
+        }
+        .instructions {
+            margin-top: 30px;
+            line-height: 1.7;
+        }
+        .instructions h3 {
+            margin: 15px 0 10px 0;
+            font-size: 18px;
+        }
+        .instructions ol, .instructions ul {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 14px;
+        }
+        .supported-sites {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .site-tag {
+            padding: 5px 10px;
+            background: #e3f2fd;
+            color: #2575fc;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        /* 适配移动端 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            .url-input {
+                flex-direction: column;
+            }
+            #videoUrl {
+                border-radius: 4px;
+                margin-bottom: 10px;
+            }
+            #parseBtn {
+                border-radius: 4px;
+                width: 100%;
+            }
+            .parse-links {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>VIP视频解析 - 免费看各大平台VIP资源</h1>
+            <div class="subtitle">支持爱奇艺、腾讯视频、优酷、芒果TV等各大视频平台</div>
+        </header>
+
+        <main class="main">
+            <div class="url-input">
+                <input type="text" id="videoUrl" placeholder="请输入需要解析的视频链接，如：https://v.qq.com/x/cover/xxx.html">
+                <button id="parseBtn">解析播放</button>
+            </div>
+
+            <div id="statusBox" class="status"></div>
+
+            <div id="resultContainer" class="result-container">
+                <h3 class="result-title">解析结果 (点击下方链接播放):</h3>
+                <div id="parseLinks" class="parse-links"></div>
+            </div>
+
+            <div class="instructions">
+                <h3>支持的视频网站:</h3>
+                <div class="supported-sites">
+                    <span class="site-tag">爱奇艺</span>
+                    <span class="site-tag">腾讯视频</span>
+                    <span class="site-tag">优酷</span>
+                    <span class="site-tag">芒果TV</span>
+                    <span class="site-tag">搜狐视频</span>
+                    <span class="site-tag">哔哩哔哩</span>
+                    <span class="site-tag">PPTV</span>
+                    <span class="site-tag">华数TV</span>
+                </div>
+
+                <h3>使用说明:</h3>
+                <ol>
+                    <li>复制您想要观看的VIP视频网址</li>
+                    <li>粘贴到上方输入框</li>
+                    <li>点击"解析播放"</li>
+                    <li>在出现的解析结果中选择一个链接进行播放</li>
+                    <li>如果一个解析接口不能用，请尝试其他接口</li>
+                </ol>
+
+                <h3>注意事项:</h3>
+                <ul>
+                    <li>本站仅用于学习交流，请勿用于商业用途</li>
+                    <li>请支持正版，能够付费的情况下请支持视频网站会员</li>
+                    <li>解析结果由第三方提供，如遇到问题，请尝试更换其他解析接口</li>
+                </ul>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>© 2023-2025 VIP视频解析 - 本站仅供学习交流使用，请支持正版</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const videoUrlInput = document.getElementById('videoUrl');
+            const parseBtn = document.getElementById('parseBtn');
+            const statusBox = document.getElementById('statusBox');
+            const resultContainer = document.getElementById('resultContainer');
+            const parseLinks = document.getElementById('parseLinks');
+
+            // 解析服务器URL - 改为直接在前端使用解析接口
+            const PARSE_SERVERS = [
+                "https://api.lhh.la/vip/?url=",
+                "https://jx.777jiexi.com/player/?url=",
+                "https://api.jhdyw.vip/?url=",
+                "https://jx.7c7c.vip/jx/?url=",
+                "https://jx.iztyy.com/svip/?url=",
+                "https://jx.parwix.com:4433/player/?url=",
+                "https://jx.playerjy.com/?url=",
+                "https://j.zz22x.com/jx/?url="
+            ];
+
+            parseBtn.addEventListener('click', function() {
+                parseVideo();
+            });
+
+            videoUrlInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    parseVideo();
+                }
+            });
+
+            function parseVideo() {
+                const videoUrl = videoUrlInput.value.trim();
+
+                // 验证输入
+                if (!videoUrl) {
+                    showStatus('请输入视频地址', 'error');
+                    return;
+                }
+
+                if (!videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
+                    showStatus('请输入正确的视频地址，以http://或https://开头', 'error');
+                    return;
+                }
+
+                // 显示加载状态
+                showStatus('正在查找可用的解析接口，请稍候...', 'loading');
+                parseBtn.disabled = true;
+
+                // 清空之前的结果
+                parseLinks.innerHTML = '';
+                resultContainer.style.display = 'none';
+
+                // 直接使用所有解析接口
+                const encodedUrl = encodeURIComponent(videoUrl);
+                let hasGeneratedLinks = false;
+
+                // 生成所有解析链接
+                PARSE_SERVERS.forEach(server => {
+                    const parseUrl = server + encodedUrl;
+                    const linkElement = document.createElement('a');
+                    linkElement.href = parseUrl;
+                    linkElement.className = 'parse-link';
+                    linkElement.target = '_blank';
+                    linkElement.textContent = '解析接口 ' + (PARSE_SERVERS.indexOf(server) + 1);
+                    parseLinks.appendChild(linkElement);
+                    hasGeneratedLinks = true;
+                });
+
+                if (hasGeneratedLinks) {
+                    showStatus('解析完成，请点击下方链接播放。如果某个接口无法播放，请尝试其他接口。', 'success');
+                    resultContainer.style.display = 'block';
+                } else {
+                    showStatus('未找到可用的解析接口，请稍后重试', 'error');
+                }
+
+                parseBtn.disabled = false;
+            }
+
+            function showStatus(message, type) {
+                statusBox.textContent = message;
+                statusBox.className = 'status ' + type;
+            }
+        });
+    </script>
+</body>
+</html>
