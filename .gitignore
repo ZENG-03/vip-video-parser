@@ -1,9 +1,10 @@
-# Python
+# 忽略Python生成的文件
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+env/
 build/
 develop-eggs/
 dist/
@@ -15,35 +16,24 @@ lib64/
 parts/
 sdist/
 var/
-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 
-# 虚拟环境
-.env
-.venv
-env/
-venv/
-ENV/
-
-# IDE
+# 忽略IDE文件
 .idea/
 .vscode/
-*.swp
-*.swo
 
-# 系统文件
-.DS_Store
-Thumbs.db
-
-# 项目特定
-*.log
+# 忽略VLC目录
 vlc-3.0.0/
-*.mp4
-*.avi
-*.mkv
 
-# 临时文件
-temp/
-tmp/
+# 忽略后端API文件（现在使用纯前端版本）
+api/
+web_server.py
+1.py
+2.py
+watch_vip_move.py
+watch_vip_move1.py
+第二版.py
+vercel.json
+proxy_server.py
